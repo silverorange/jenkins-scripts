@@ -100,7 +100,7 @@ function writeComposer()
 {
   console.log('Writing new composer file');
   const newContents = JSON.stringify(composerJson, null, 2);
-  fs.writeFile('composer.new.json', newContents, function(err) {
+  fs.writeFile('composer.json', newContents, function(err) {
     if (err) {
       return console.log(err);
     }
