@@ -4,12 +4,13 @@ authToken = process.argv[2];
 jobName = process.argv[3];
 isPackage = (process.argv[4] === 'package');
 composerJson = '';
+composerLock = '';
 requirementsToProcess = 0;
 modifiedPackages = [];
 
 fs.readFile('composer.json', 'utf8', (err, contents) => {
   if (err) {
-    console.log('File could not be read');
+    console.log('composer.json could not be read');
     process.exit(1);
   } else {
     try {
@@ -18,6 +19,19 @@ fs.readFile('composer.json', 'utf8', (err, contents) => {
     } catch (e) {
       console.log(`There was a syntax error in the composer.json file ${e.message}`);
       process.exit(1);
+    }
+  }
+});
+
+fs.readFile('composer.lock', 'utf8', (err, contents) => {
+  if (err) {
+    console.log('composer.lock could not be read');
+    process.exit(1);
+  } else {
+    try {
+      composerLock = JSON.parse(contents);
+    } catch (e) {
+      console.log(`There was a syntax error in the composer.lock file ${e.message}`);
     }
   }
 });
@@ -106,11 +120,15 @@ function addRequirement(json)
     'type': 'git',
     'url': json.head.repo.ssh_url
   });
-  let previousVersion = composerJson.require[json.base.repo.full_name].match(
-    /\d*\.\d*\.\d*/g
-  );
+  let previousVersion = '';
+  for (individualPackage in composerLock.packages) {
+    if (individualPackage.name === json.base.repo.full_name) {
+      previousVersion = individualPackage.version;
+      break;
+    }
+  }
   modifiedPackages.push(json.base.repo.full_name);
-  composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha}`;
+  composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha} as ${previousVersion}`;
 }
 
 function writeComposer()
