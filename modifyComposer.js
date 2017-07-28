@@ -38,10 +38,12 @@ function readBody(error, response, body)
   }
   try {
     let json = JSON.parse(body);
+    console.log('json body', json.body);
     requiredLine = json.body.match(
       /Requires.*\r|Depends (?:up)?on.*/gi
     );
     if (requiredLine) {
+      console.log('required line', requiredLine);
       githubLinks = requiredLine[0].match(/github.com\/silverorange\/[^\/]*\/pull\/\d*/g);
       if (githubLinks) {
         console.log('Detected extra requirements');
