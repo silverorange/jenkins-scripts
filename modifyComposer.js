@@ -121,10 +121,9 @@ function addRequirement(json)
     'url': json.head.repo.ssh_url
   });
   let previousVersion = '';
-  for (individualPackage in composerLock.packages) {
-    console.log(individualPackage.name, json.base.repo.full_name);
-    if (individualPackage.name === json.base.repo.full_name) {
-      previousVersion = individualPackage.version;
+  for (var x = 0; x < composerLock.packages.length; x++) {
+    if (composerLock.packages[x].name === json.base.repo.full_name) {
+      previousVersion = composerLock.packages[x].version;
       break;
     }
   }
@@ -142,8 +141,8 @@ function writeComposer()
     }
   });
   let packages = '';
-  for (individualPackage in modifiedPackages) {
-    packages = packages + individualPackage + ' ';
+  for (var x = 0; x < modifiedPackages.length; x++) {
+    packages = packages + modifiedPackages[x] + ' ';
   }
   console.log(packages);
 }
