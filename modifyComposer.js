@@ -39,18 +39,16 @@ function readBody(error, response, body)
   }
   try {
     let json = JSON.parse(body);
-    console.log('json body', json.body);
     requiredLine = json.body.match(
       /Requires.*\r|Depends (?:up)?on.*/gi
     );
+    if (!('repositories' in composerJson)) {
+      composerJson.repositories = [];
+    }
+    if (isPackage) {
+      addRequirement(json);
+    }
     if (requiredLine) {
-      if (!('repositories' in composerJson)) {
-        composerJson.repositories = [];
-      }
-      if (isPackage) {
-        addRequirement(json);
-      }
-      console.log('required line', requiredLine);
       githubLinks = requiredLine[0].match(/github.com\/silverorange\/[^\/]*\/pull\/\d*/g);
       if (githubLinks) {
         console.log('Detected extra requirements');
@@ -73,6 +71,9 @@ function readBody(error, response, body)
           }, processDependency);
         });
       }
+    } else {
+      // No need to wait for asynchronous api hits, just write now
+      writeComposer();
     }
   } catch (e) {
     console.log(`There was an issue parsing a response from the github api ${e.message}`);
