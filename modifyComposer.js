@@ -100,7 +100,7 @@ function addRequirement(json)
 {
   composerJson.repositories.push({
     'type': 'git',
-    'url': `git@github.com:${json.head.repo.owner.login}/${packageName}.git`
+    'url': json.head.repo.ssh_url
   });
   let previousVersion = composerJson.require[json.base.repo.full_name].match(
     /\d*\.\d*\.\d*/g
