@@ -122,6 +122,7 @@ function addRequirement(json)
   });
   let previousVersion = '';
   for (individualPackage in composerLock.packages) {
+    console.log(individualPackage.name, json.base.repo.full_name);
     if (individualPackage.name === json.base.repo.full_name) {
       previousVersion = individualPackage.version;
       break;
