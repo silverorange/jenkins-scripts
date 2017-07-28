@@ -110,7 +110,7 @@ function addRequirement(json)
     /\d*\.\d*\.\d*/g
   );
   modifiedPackages.push(json.base.repo.full_name);
-  composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha} as ${previousVersion}`;
+  composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha}`;
 }
 
 function writeComposer()
