@@ -48,11 +48,7 @@ function readBody(error, response, body)
         composerJson.repositories = [];
       }
       if (isPackage) {
-        composerJson.repositories.push({
-          'type': 'git',
-          'url': json.head.repo.ssh_url
-        });
-        composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha}`;
+        addRequirement(json);
       }
       console.log('required line', requiredLine);
       githubLinks = requiredLine[0].match(/github.com\/silverorange\/[^\/]*\/pull\/\d*/g);
@@ -65,10 +61,6 @@ function readBody(error, response, body)
           packageName = value.match(/silverorange\/([^\/]*)/)[1];
           pullNumber = value.match(/pull\/([^\/]*)/)[1];
           console.log(`Adding ${packageName} PR #${pullNumber} to composer requirements`);
-          composerJson.repositories.push({
-            'type': 'git',
-            'url': `git@github.com:${json.head.repo.owner.login}/${packageName}.git`
-          });
           request({
             url: `https://api.github.com/repos/silverorange/${packageName}/pulls/${pullNumber}`,
             auth: {
@@ -78,7 +70,7 @@ function readBody(error, response, body)
             headers: {
               'User-Agent': 'silverorange jenkins process'
             }
-          }, addRequirements);
+          }, processDependency);
         });
       }
     }
@@ -87,16 +79,14 @@ function readBody(error, response, body)
   }
 }
 
-function addRequirements(error, response, body)
+function processDependency(error, response, body)
 {
   if (error) {
     console.error(`Error: ${error}`);
   }
   try {
     json = JSON.parse(body);
-    console.log(json.base.repo.name, json.head.sha);
-    console.log(composerJson.require);
-    composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha}`;
+    addRequirement(json);
     requirementsToProcess -= 1;
     if (requirementsToProcess === 0) {
       writeComposer();
@@ -104,6 +94,18 @@ function addRequirements(error, response, body)
   } catch (e) {
     console.log(`There was an issue loading other composer requirements ${e.message}`);
   }
+}
+
+function addRequirement(json)
+{
+  composerJson.repositories.push({
+    'type': 'git',
+    'url': `git@github.com:${json.head.repo.owner.login}/${packageName}.git`
+  });
+  let previousVersion = composerJson.require[json.base.repo.full_name].match(
+    /\d*\.\d*\.\d*/g
+  )
+  composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha} as ${previousVersion}`;
 }
 
 function writeComposer()
