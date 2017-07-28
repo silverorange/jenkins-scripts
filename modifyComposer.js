@@ -2,6 +2,7 @@ const fs = require('fs');
 const request = require('request');
 authToken = process.argv[2];
 jobName = process.argv[3];
+isPackage = (process.argv[4] === 'package');
 composerJson = '';
 requirementsToProcess = 0;
 
@@ -43,13 +44,20 @@ function readBody(error, response, body)
       /Requires.*\r|Depends (?:up)?on.*/gi
     );
     if (requiredLine) {
+      if (!('repositories' in composerJson)) {
+        composerJson.repositories = [];
+      }
+      if (isPackage) {
+        composerJson.repositories.push({
+          'type': 'git',
+          'url': json.head.repo.ssh_url
+        });
+        composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha}`;
+      }
       console.log('required line', requiredLine);
       githubLinks = requiredLine[0].match(/github.com\/silverorange\/[^\/]*\/pull\/\d*/g);
       if (githubLinks) {
         console.log('Detected extra requirements');
-        if (!('repositories' in composerJson)) {
-          composerJson.repositories = [];
-        }
         requirementsToProcess = githubLinks.length;
         githubLinks.forEach(function (value) {
           // The first element in the array includes silverorange, second
@@ -88,7 +96,7 @@ function addRequirements(error, response, body)
     json = JSON.parse(body);
     console.log(json.base.repo.name, json.head.sha);
     console.log(composerJson.require);
-    composerJson.require[`silverorange/${json.base.repo.name}`] = `dev-master#${json.head.sha}`;
+    composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha}`;
     requirementsToProcess -= 1;
     if (requirementsToProcess === 0) {
       writeComposer();
