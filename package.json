@@ -1,8 +1,27 @@
 {
   "name": "silverorange-jenkins-scripts",
+  "description": "Helper scripts to aid continuous integration of PHP sites.",
+  "repository": "https://github.com/silverorange/jenkins-scripts",
   "version": "0.1.0",
+  "contributors": [
+    "Ross Evans <therealrossevans@gmail.com>",
+    "Michael Gauthier <mike@silverorange.com>"
+  ],
+  "license": {
+    "type": "MIT",
+    "url": "http://opensource.org/licenses/MIT"
+  },
+  "scripts": {
+    "lint": "eslint *.js"
+  },
   "dependencies": {
     "request": "2.81.0"
   },
-  "private": true
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb": "14.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^3.0.2 || ^4.0.0",
+    "eslint-plugin-react": "^6.9.0"
+  }
 }
