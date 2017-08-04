@@ -1,5 +1,3 @@
-console.log('Test exit status');
-process.exit(1);
 const fs = require('fs');
 const request = require('request');
 authToken = process.argv[2];
