@@ -57,7 +57,7 @@ function readBody(error, response, body)
   try {
     let json = JSON.parse(body);
     noTests = json.body.match(
-        /no tests|don't run tests|do not run tests/gi
+        /no tests|don't run  tests|do not run tests|🚫/gi
     )
     if (noTests) {
       console.log('Detected no tests keyword');
