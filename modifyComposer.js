@@ -1,12 +1,13 @@
 const fs = require('fs');
 const request = require('request');
-authToken = process.argv[2];
-jobName = process.argv[3];
-isPackage = (process.argv[4] === 'package');
-composerJson = '';
-composerLock = '';
-requirementsToProcess = 0;
-modifiedPackages = [];
+
+const authToken = process.argv[2];
+const jobName = process.argv[3];
+const isPackage = (process.argv[4] === 'package');
+let composerJson = '';
+let composerLock = '';
+let requirementsToProcess = 0;
+const modifiedPackages = [];
 
 fs.readFile('composer.json', 'utf8', (err, contents) => {
   if (err) {
@@ -37,33 +38,65 @@ fs.readFile('composer.lock', 'utf8', (err, contents) => {
   }
 });
 
-request({
-  url: `https://api.github.com/repos/${jobName}`,
-  auth: {
-    'user': 'sogitbot',
-    'pass': authToken
-  },
-  headers: {
-    'User-Agent': 'silverorange jenkins process'
-  }
-}, readBody);
+function addRequirement(json) {
+  composerJson.repositories.push({
+    type: 'git',
+    url: json.head.repo.ssh_url,
+  });
 
-function readBody(error, response, body)
-{
+  const thePackage = composerLock.packages
+    .find(element => (element.name === json.base.repo.full_name));
+
+  const previousVersion = (thePackage) ? thePackage.version : '';
+
+  modifiedPackages.push(json.base.repo.full_name);
+  composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha} as ${previousVersion}`;
+}
+
+function writeComposer() {
+  const newContents = JSON.stringify(composerJson, null, 2);
+  fs.writeFile('composer.json', newContents, (err) => {
+    if (err) {
+      console.log(err);
+      process.exit(1);
+    }
+  });
+  const packages = modifiedPackages.reduce((packagesString, thePackage) => `${packagesString} ${thePackage}`, '');
+  console.log(packages);
+}
+
+function processDependency(error, response, body) {
   if (error) {
     console.error(`Error: ${error}`);
     process.exit(1);
   }
   try {
-    let json = JSON.parse(body);
-    noTests = json.body.match(
-        /no tests|don't run  tests|do not run tests|🚫/gi
-    )
+    const json = JSON.parse(body);
+    addRequirement(json);
+    requirementsToProcess -= 1;
+    if (requirementsToProcess === 0) {
+      writeComposer();
+    }
+  } catch (e) {
+    console.log(`There was an issue loading other composer requirements ${e.message}`);
+    process.exit(1);
+  }
+}
+
+function readBody(error, response, body) {
+  if (error) {
+    console.error(`Error: ${error}`);
+    process.exit(1);
+  }
+  try {
+    const json = JSON.parse(body);
+    const noTests = /no\stests|(don't|do\snot)\srun\stests|🚫/gi.test(json.body);
     if (noTests) {
       console.log('Detected no tests keyword');
       process.exit(3);
     }
-    requiredLine = json.body.match(
+
+    const requiredLine = json.body.match(
       /Requires.*\r|Depends (?:up)?on.*/gi
     );
     if (!('repositories' in composerJson)) {
@@ -73,23 +106,23 @@ function readBody(error, response, body)
       addRequirement(json);
     }
     if (requiredLine) {
-      githubLinks = requiredLine[0].match(/github.com\/silverorange\/[^\/]*\/pull\/\d*/g);
+      const githubLinks = requiredLine[0].match(/github.com\/silverorange\/[^\/]*\/pull\/\d*/g);
       if (githubLinks) {
         requirementsToProcess = githubLinks.length;
-        githubLinks.forEach(function (value) {
+        githubLinks.forEach((value) => {
           // The first element in the array includes silverorange, second
           // just the package name (matched in parentheses)
-          packageName = value.match(/silverorange\/([^\/]*)/)[1];
-          pullNumber = value.match(/pull\/([^\/]*)/)[1];
+          const packageName = value.match(/silverorange\/([^\/]*)/)[1];
+          const pullNumber = value.match(/pull\/([^\/]*)/)[1];
           request({
             url: `https://api.github.com/repos/silverorange/${packageName}/pulls/${pullNumber}`,
             auth: {
-              'user': 'sogitbot',
-              'pass': authToken
+              user: 'sogitbot',
+              pass: authToken,
             },
             headers: {
-              'User-Agent': 'silverorange jenkins process'
-            }
+              'User-Agent': 'silverorange jenkins process',
+            },
           }, processDependency);
         });
       }
@@ -103,54 +136,13 @@ function readBody(error, response, body)
   }
 }
 
-function processDependency(error, response, body)
-{
-  if (error) {
-    console.error(`Error: ${error}`);
-    process.exit(1);
-  }
-  try {
-    json = JSON.parse(body);
-    addRequirement(json);
-    requirementsToProcess -= 1;
-    if (requirementsToProcess === 0) {
-      writeComposer();
-    }
-  } catch (e) {
-    console.log(`There was an issue loading other composer requirements ${e.message}`);
-    process.exit(1);
-  }
-}
-
-function addRequirement(json)
-{
-  composerJson.repositories.push({
-    'type': 'git',
-    'url': json.head.repo.ssh_url
-  });
-  let previousVersion = '';
-  for (var x = 0; x < composerLock.packages.length; x++) {
-    if (composerLock.packages[x].name === json.base.repo.full_name) {
-      previousVersion = composerLock.packages[x].version;
-      break;
-    }
-  }
-  modifiedPackages.push(json.base.repo.full_name);
-  composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha} as ${previousVersion}`;
-}
-
-function writeComposer()
-{
-  const newContents = JSON.stringify(composerJson, null, 2);
-  fs.writeFile('composer.json', newContents, function(err) {
-    if (err) {
-      return console.log(err);
-      process.exit(1);
-    }
-  });
-  let packages = '';
-  for (var x = 0; x < modifiedPackages.length; x++) {
-    packages = packages + modifiedPackages[x] + ' ';
-  }
-  console.log(packages);
-}
+request({
+  url: `https://api.github.com/repos/${jobName}`,
+  auth: {
+    user: 'sogitbot',
+    pass: authToken,
+  },
+  headers: {
+    'User-Agent': 'silverorange jenkins process',
+  },
+}, readBody);
