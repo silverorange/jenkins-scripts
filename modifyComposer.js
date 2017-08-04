@@ -61,6 +61,7 @@ function readBody(error, response, body)
     )
     if (noTests) {
       console.log('Detected no tests keyword');
+      process.exit(3);
     }
     requiredLine = json.body.match(
       /Requires.*\r|Depends (?:up)?on.*/gi
