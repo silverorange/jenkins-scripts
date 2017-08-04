@@ -1,3 +1,5 @@
+console.log('Test exit status');
+process.exit(1);
 const fs = require('fs');
 const request = require('request');
 authToken = process.argv[2];
@@ -32,6 +34,7 @@ fs.readFile('composer.lock', 'utf8', (err, contents) => {
       composerLock = JSON.parse(contents);
     } catch (e) {
       console.log(`There was a syntax error in the composer.lock file ${e.message}`);
+      process.exit(1);
     }
   }
 });
