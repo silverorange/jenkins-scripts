@@ -122,14 +122,16 @@ module.exports = function modifyComposer(authToken, jobName, isPackage) {
         throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
       }
 
-      if (!('repositories' in composerJson)) {
-        composerJson.repositories = [];
-      }
+      if (isPackage) {
+        if (!('repositories' in composerJson)) {
+          composerJson.repositories = [];
+        }
 
-      results.dependencies.forEach((dependency) => {
-        addRepository(composerJson, dependency.sshUrl);
-        addRequirement(composerJson, composerLock, dependency);
-      });
+        results.dependencies.forEach((dependency) => {
+          addRepository(composerJson, dependency.sshUrl);
+          addRequirement(composerJson, composerLock, dependency);
+        });
+      }
 
       return writeComposerAsPromise(composerJson, useTabs)
         .then(() => results.dependencies);
