@@ -1,148 +1,155 @@
 const fs = require('fs');
-const request = require('request');
+const Promise = require('bluebird');
+const chalk = require('chalk');
+const fetch = require('isomorphic-fetch');
+const showHelp = require('./showHelp');
+const getDependencies = require('./getDependencies');
+const getNoTests = require('./getNoTests');
+
+if (process.argv.length < 5) {
+  showHelp();
+  process.exit(1);
+}
 
 const authToken = process.argv[2];
 const jobName = process.argv[3];
 const isPackage = (process.argv[4] === 'package');
-let composerJson = '';
-let composerLock = '';
-let requirementsToProcess = 0;
-const modifiedPackages = [];
 
-fs.readFile('composer.json', 'utf8', (err, contents) => {
-  if (err) {
-    console.log('composer.json could not be read');
-    process.exit(1);
-  } else {
-    try {
-      // parse
-      composerJson = JSON.parse(contents);
-    } catch (e) {
-      console.log(`There was a syntax error in the composer.json file ${e.message}`);
-      process.exit(1);
-    }
+const userAgent = 'silverorange CI process';
+
+const readFileAsPromise = Promise.promisify(fs.readFile);
+const writeFileAsPromise = Promise.promisify(fs.writeFile);
+
+function addRepository(json, sshUrl) {
+  // Make sure it's not already in the repository list.
+  if (!json.repositories.some(repository => repository.url === sshUrl)) {
+    // Add new repository to top of list so it overrides the default repository
+    // list.
+    json.repositories.unshift({
+      type: 'git',
+      url: sshUrl,
+    });
   }
-});
+}
 
-fs.readFile('composer.lock', 'utf8', (err, contents) => {
-  if (err) {
-    console.log('composer.lock could not be read');
-    process.exit(1);
-  } else {
-    try {
-      composerLock = JSON.parse(contents);
-    } catch (e) {
-      console.log(`There was a syntax error in the composer.lock file ${e.message}`);
-      process.exit(1);
-    }
-  }
-});
+function addRequirement(json, lock, dependency) {
+  const modifiedJson = json;
 
-function addRequirement(json) {
-  composerJson.repositories.push({
-    type: 'git',
-    url: json.head.repo.ssh_url,
-  });
-
-  const thePackage = composerLock.packages
-    .find(element => (element.name === json.base.repo.full_name));
-
+  const thePackage = lock.packages.find(element => (element.name === dependency.fullName));
   const previousVersion = (thePackage) ? thePackage.version : '';
 
-  modifiedPackages.push(json.base.repo.full_name);
-  composerJson.require[json.base.repo.full_name] = `dev-master#${json.head.sha} as ${previousVersion}`;
+  // TODO: check if it should be require or require-dev
+  modifiedJson.require[dependency.fullName] = `dev-master#${dependency.headSha} as ${previousVersion}`;
 }
 
-function writeComposer() {
-  const newContents = JSON.stringify(composerJson, null, 2);
-  fs.writeFile('composer.json', newContents, (err) => {
-    if (err) {
-      console.log(err);
-      process.exit(1);
-    }
-  });
-  const packages = modifiedPackages.reduce((packagesString, thePackage) => `${packagesString} ${thePackage}`, '');
-  console.log(packages);
+function writeComposerAsPromise(json, useTabs) {
+  // Stringify JSON with pretty-printing and trailing newline.
+  const newContents = `${JSON.stringify(json, null, 2)}\n`;
+
+  // Convert spaces to tabs if needed.
+  const formattedContents = (useTabs)
+    ? newContents.replace(/^( {2})+/gm, fullMatch => '\t'.repeat(fullMatch.length / 2))
+    : newContents;
+
+  return writeFileAsPromise('composer.json', formattedContents);
 }
 
-function processDependency(error, response, body) {
-  if (error) {
-    console.error(`Error: ${error}`);
-    process.exit(1);
-  }
-  try {
-    const json = JSON.parse(body);
-    addRequirement(json);
-    requirementsToProcess -= 1;
-    if (requirementsToProcess === 0) {
-      writeComposer();
-    }
-  } catch (e) {
-    console.log(`There was an issue loading other composer requirements ${e.message}`);
-    process.exit(1);
-  }
+function fetchGitHubJson(url) {
+  return fetch(url, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      'User-Agent': userAgent,
+    },
+  }).then(response => response.json());
 }
 
-function readBody(error, response, body) {
-  if (error) {
-    console.error(`Error: ${error}`);
-    process.exit(1);
-  }
-  try {
-    const json = JSON.parse(body);
-    const noTests = /no\stests|(don't|do\snot)\srun\stests|🚫/gi.test(json.body);
-    if (noTests) {
+function getRepoDetails(json) {
+  return {
+    url: json.url,
+    htmlUrl: json.html_url,
+    sshUrl: json.head.repo.ssh_url,
+    fullName: json.base.repo.full_name,
+    headSha: json.head.sha,
+  };
+}
+
+// Store visited links to prevent infinite loop.
+const visitedLinks = {};
+function getDependenciesRecursive(url) {
+  return fetchGitHubJson(url)
+    .then((json) => {
+      // Prevent infinite recursion. Mark link as visited.
+      visitedLinks[url] = true;
+
+      // Add this dependency to the list or returned dependencies.
+      const dependencies = [getRepoDetails(json)];
+
+      // Get sub-dependencies from JSON body field.
+      const gitHubApiLinks = getDependencies(json.body);
+
+      // Exclude sub-dependencies we've already visited.
+      const linksToVisit = gitHubApiLinks.filter(subUrl => !visitedLinks[subUrl]);
+
+      // Visit all sub-dependencies and merge returned array of dependencies.
+      return Promise.all(
+        linksToVisit.map(subUrl => getDependenciesRecursive(subUrl))
+      ).then(subLinks => subLinks.reduce(
+        (allDependencies, subDependencies) => allDependencies.concat(subDependencies),
+        dependencies
+      ));
+    });
+}
+
+// Load JSON files and all dependencies from GitHub PR bodies.
+Promise.props({
+  composerJson: readFileAsPromise('composer.json', 'utf8'),
+  lockJson: readFileAsPromise('composer.lock', 'utf8'),
+  dependencies: getDependenciesRecursive(`https://api.github.com/repos/${jobName}`),
+})
+  .then((results) => {
+    // TODO
+    /*if (getNoTests(json.body)) {
       console.log('Detected no tests keyword');
       process.exit(3);
+    }*/
+
+    const useTabs = /^\t/m.test(results.composerJson);
+    let composerJson = '';
+    let composerLock = '';
+
+    try {
+      // Check if file is indented with tabs or spaces. We could also use the
+      // editorconfig file for this.
+      composerJson = JSON.parse(results.composerJson);
+    } catch (e) {
+      throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
     }
 
-    const requiredLine = json.body.match(
-      /Requires.*\r|Depends (?:up)?on.*/gi
-    );
+    try {
+      composerLock = JSON.parse(results.lockJson);
+    } catch (e) {
+      throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
+    }
+
     if (!('repositories' in composerJson)) {
       composerJson.repositories = [];
     }
-    if (isPackage) {
-      addRequirement(json);
-    }
-    if (requiredLine) {
-      const githubLinks = requiredLine[0].match(/github.com\/silverorange\/[^\/]*\/pull\/\d*/g);
-      if (githubLinks) {
-        requirementsToProcess = githubLinks.length;
-        githubLinks.forEach((value) => {
-          // The first element in the array includes silverorange, second
-          // just the package name (matched in parentheses)
-          const packageName = value.match(/silverorange\/([^\/]*)/)[1];
-          const pullNumber = value.match(/pull\/([^\/]*)/)[1];
-          request({
-            url: `https://api.github.com/repos/silverorange/${packageName}/pulls/${pullNumber}`,
-            auth: {
-              user: 'sogitbot',
-              pass: authToken,
-            },
-            headers: {
-              'User-Agent': 'silverorange jenkins process',
-            },
-          }, processDependency);
-        });
-      }
-    } else {
-      // No need to wait for asynchronous api hits, just write now
-      writeComposer();
-    }
-  } catch (e) {
-    console.log(`There was an issue parsing a response from the github api ${e.message}`);
-    process.exit(1);
-  }
-}
 
-request({
-  url: `https://api.github.com/repos/${jobName}`,
-  auth: {
-    user: 'sogitbot',
-    pass: authToken,
-  },
-  headers: {
-    'User-Agent': 'silverorange jenkins process',
-  },
-}, readBody);
+    results.dependencies.forEach((dependency) => {
+      addRepository(composerJson, dependency.sshUrl);
+      addRequirement(composerJson, composerLock, dependency);
+    });
+
+    return writeComposerAsPromise(composerJson, useTabs)
+      .then(() => results.dependencies);
+  })
+  .then((dependencies) => {
+    console.log('Updated composer.json with the following dependencies:');
+    dependencies.forEach((dependency) => {
+      console.log(` - ${dependency.fullName}`);
+    });
+  })
+  .catch((err) => {
+    console.error(chalk.red(`Error: ${err}`));
+    process.exit(1);
+  });
