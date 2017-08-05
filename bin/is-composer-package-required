@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+
+const isRequired = require('../src/isRequired');
+
+const repoName = process.argv[2];
+
+isRequired(repoName);

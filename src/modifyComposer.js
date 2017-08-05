@@ -2,23 +2,13 @@ const fs = require('fs');
 const Promise = require('bluebird');
 const chalk = require('chalk');
 const fetch = require('isomorphic-fetch');
-const showHelp = require('./showHelp');
 const getDependencies = require('./getDependencies');
 const getNoTests = require('./getNoTests');
 
-if (process.argv.length < 5) {
-  showHelp();
-  process.exit(1);
-}
-
-const authToken = process.argv[2];
-const jobName = process.argv[3];
-const isPackage = (process.argv[4] === 'package');
-
-const userAgent = 'silverorange CI process';
-
 const readFileAsPromise = Promise.promisify(fs.readFile);
 const writeFileAsPromise = Promise.promisify(fs.writeFile);
+
+const USER_AGENT = 'silverorange CI process';
 
 function addRepository(json, sshUrl) {
   // Make sure it's not already in the repository list.
@@ -54,11 +44,11 @@ function writeComposerAsPromise(json, useTabs) {
   return writeFileAsPromise('composer.json', formattedContents);
 }
 
-function fetchGitHubJson(url) {
+function fetchGitHubJson(url, authToken) {
   return fetch(url, {
     headers: {
       Authorization: `Bearer ${authToken}`,
-      'User-Agent': userAgent,
+      'User-Agent': USER_AGENT,
     },
   }).then(response => response.json());
 }
@@ -75,8 +65,8 @@ function getRepoDetails(json) {
 
 // Store visited links to prevent infinite loop.
 const visitedLinks = {};
-function getDependenciesRecursive(url) {
-  return fetchGitHubJson(url)
+function getDependenciesRecursive(url, authToken) {
+  return fetchGitHubJson(url, authToken)
     .then((json) => {
       // Prevent infinite recursion. Mark link as visited.
       visitedLinks[url] = true;
@@ -92,7 +82,7 @@ function getDependenciesRecursive(url) {
 
       // Visit all sub-dependencies and merge returned array of dependencies.
       return Promise.all(
-        linksToVisit.map(subUrl => getDependenciesRecursive(subUrl))
+        linksToVisit.map(subUrl => getDependenciesRecursive(subUrl, authToken))
       ).then(subLinks => subLinks.reduce(
         (allDependencies, subDependencies) => allDependencies.concat(subDependencies),
         dependencies
@@ -100,56 +90,58 @@ function getDependenciesRecursive(url) {
     });
 }
 
-// Load JSON files and all dependencies from GitHub PR bodies.
-Promise.props({
-  composerJson: readFileAsPromise('composer.json', 'utf8'),
-  lockJson: readFileAsPromise('composer.lock', 'utf8'),
-  dependencies: getDependenciesRecursive(`https://api.github.com/repos/${jobName}`),
-})
-  .then((results) => {
-    // TODO
-    /*if (getNoTests(json.body)) {
-      console.log('Detected no tests keyword');
-      process.exit(3);
-    }*/
-
-    const useTabs = /^\t/m.test(results.composerJson);
-    let composerJson = '';
-    let composerLock = '';
-
-    try {
-      // Check if file is indented with tabs or spaces. We could also use the
-      // editorconfig file for this.
-      composerJson = JSON.parse(results.composerJson);
-    } catch (e) {
-      throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
-    }
-
-    try {
-      composerLock = JSON.parse(results.lockJson);
-    } catch (e) {
-      throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
-    }
-
-    if (!('repositories' in composerJson)) {
-      composerJson.repositories = [];
-    }
-
-    results.dependencies.forEach((dependency) => {
-      addRepository(composerJson, dependency.sshUrl);
-      addRequirement(composerJson, composerLock, dependency);
-    });
-
-    return writeComposerAsPromise(composerJson, useTabs)
-      .then(() => results.dependencies);
+module.exports = function modifyComposer(authToken, jobName, isPackage) {
+  // Load JSON files and all dependencies from GitHub PR bodies.
+  Promise.props({
+    composerJson: readFileAsPromise('composer.json', 'utf8'),
+    lockJson: readFileAsPromise('composer.lock', 'utf8'),
+    dependencies: getDependenciesRecursive(`https://api.github.com/repos/${jobName}`, authToken),
   })
-  .then((dependencies) => {
-    console.log('Updated composer.json with the following dependencies:');
-    dependencies.forEach((dependency) => {
-      console.log(` - ${dependency.fullName}`);
+    .then((results) => {
+      // TODO
+      /*if (getNoTests(json.body)) {
+        console.log('Detected no tests keyword');
+        process.exit(3);
+      }*/
+
+      const useTabs = /^\t/m.test(results.composerJson);
+      let composerJson = '';
+      let composerLock = '';
+
+      try {
+        // Check if file is indented with tabs or spaces. We could also use the
+        // editorconfig file for this.
+        composerJson = JSON.parse(results.composerJson);
+      } catch (e) {
+        throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
+      }
+
+      try {
+        composerLock = JSON.parse(results.lockJson);
+      } catch (e) {
+        throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
+      }
+
+      if (!('repositories' in composerJson)) {
+        composerJson.repositories = [];
+      }
+
+      results.dependencies.forEach((dependency) => {
+        addRepository(composerJson, dependency.sshUrl);
+        addRequirement(composerJson, composerLock, dependency);
+      });
+
+      return writeComposerAsPromise(composerJson, useTabs)
+        .then(() => results.dependencies);
+    })
+    .then((dependencies) => {
+      console.log('Updated composer.json with the following dependencies:');
+      dependencies.forEach((dependency) => {
+        console.log(` - ${dependency.fullName}`);
+      });
+    })
+    .catch((err) => {
+      console.error(chalk.red(`Error: ${err}`));
+      process.exit(1);
     });
-  })
-  .catch((err) => {
-    console.error(chalk.red(`Error: ${err}`));
-    process.exit(1);
-  });
+};

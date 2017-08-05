@@ -11,6 +11,10 @@
     "type": "MIT",
     "url": "http://opensource.org/licenses/MIT"
   },
+  "bin": {
+    "modify-composer": "./bin/modify-composer",
+    "is-composer-package-required": "./bin/is-composer-package-required"
+  },
   "scripts": {
     "lint": "eslint *.js"
   },
