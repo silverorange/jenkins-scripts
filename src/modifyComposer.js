@@ -90,60 +90,69 @@ function getDependenciesRecursive(url, authToken) {
     });
 }
 
+function getNoTestsForUrl(url) {
+  return fetchGitHubJson(url)
+    .then(json => Promise.resolve(getNoTests(json.body)));
+}
+
 module.exports = function modifyComposer(authToken, jobName, isPackage) {
-  // Load JSON files and all dependencies from GitHub PR bodies.
-  Promise.props({
-    composerJson: readFileAsPromise('composer.json', 'utf8'),
-    lockJson: readFileAsPromise('composer.lock', 'utf8'),
-    dependencies: getDependenciesRecursive(`https://api.github.com/repos/${jobName}`, authToken),
-  })
-    .then((results) => {
-      // TODO
-      /*if (getNoTests(json.body)) {
-        console.log('Detected no tests keyword');
-        process.exit(3);
-      }*/
+  const jobUrl = `https://api.github.com/repos/${jobName}`;
 
-      const useTabs = /^\t/m.test(results.composerJson);
-      let composerJson = '';
-      let composerLock = '';
+  // Check if we should run CI tests for the job.
+  getNoTestsForUrl(jobUrl).then((noTests) => {
+    if (noTests) {
+      console.log(chalk.yellow('Detected no tests keyword'));
+      process.exit(3);
+    }
 
-      try {
-        // Check if file is indented with tabs or spaces. We could also use the
-        // editorconfig file for this.
-        composerJson = JSON.parse(results.composerJson);
-      } catch (e) {
-        throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
-      }
+    // Load JSON files and all dependencies from GitHub PR bodies.
+    Promise.props({
+      composerJson: readFileAsPromise('composer.json', 'utf8'),
+      lockJson: readFileAsPromise('composer.lock', 'utf8'),
+      dependencies: getDependenciesRecursive(jobUrl, authToken),
+    })
+      .then((results) => {
+        const useTabs = /^\t/m.test(results.composerJson);
+        let composerJson = '';
+        let composerLock = '';
 
-      try {
-        composerLock = JSON.parse(results.lockJson);
-      } catch (e) {
-        throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
-      }
-
-      if (isPackage) {
-        if (!('repositories' in composerJson)) {
-          composerJson.repositories = [];
+        try {
+          // Check if file is indented with tabs or spaces. We could also use the
+          // editorconfig file for this.
+          composerJson = JSON.parse(results.composerJson);
+        } catch (e) {
+          throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
         }
 
-        results.dependencies.forEach((dependency) => {
-          addRepository(composerJson, dependency.sshUrl);
-          addRequirement(composerJson, composerLock, dependency);
-        });
-      }
+        try {
+          composerLock = JSON.parse(results.lockJson);
+        } catch (e) {
+          throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
+        }
 
-      return writeComposerAsPromise(composerJson, useTabs)
-        .then(() => results.dependencies);
-    })
-    .then((dependencies) => {
-      console.log('Updated composer.json with the following dependencies:');
-      dependencies.forEach((dependency) => {
-        console.log(` - ${dependency.fullName}`);
+        if (isPackage) {
+          if (!('repositories' in composerJson)) {
+            composerJson.repositories = [];
+          }
+
+          results.dependencies.forEach((dependency) => {
+            addRepository(composerJson, dependency.sshUrl);
+            addRequirement(composerJson, composerLock, dependency);
+          });
+        }
+
+        return writeComposerAsPromise(composerJson, useTabs)
+          .then(() => results.dependencies);
+      })
+      .then((dependencies) => {
+        console.log('Updated composer.json with the following dependencies:');
+        dependencies.forEach((dependency) => {
+          console.log(` - ${dependency.fullName}`);
+        });
+      })
+      .catch((err) => {
+        console.error(chalk.red(`Error: ${err}`));
+        process.exit(1);
       });
-    })
-    .catch((err) => {
-      console.error(chalk.red(`Error: ${err}`));
-      process.exit(1);
-    });
+  });
 };
