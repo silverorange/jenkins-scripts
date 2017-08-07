@@ -95,10 +95,6 @@ function getNoTestsForUrl(url) {
     .then(json => Promise.resolve(getNoTests(json.body)));
 }
 
-function getRepoNameMatchesJobName(dependencyName, jobName) {
-  return jobName.includes(dependencyName);
-}
-
 module.exports = function modifyComposer(authToken, jobName, isPackage) {
   const jobUrl = `https://api.github.com/repos/${jobName}`;
 
@@ -140,10 +136,7 @@ module.exports = function modifyComposer(authToken, jobName, isPackage) {
         // (because they're never a composer dependency)
         if (!isPackage) {
           filteredDependencies = results.dependencies.filter(
-            dependency => !getRepoNameMatchesJobName(
-              dependency.fullName,
-              jobName
-            )
+            dependency => !jobName.includes(dependency.fullName)
           );
         }
 
