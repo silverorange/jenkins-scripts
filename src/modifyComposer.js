@@ -130,15 +130,14 @@ module.exports = function modifyComposer(authToken, jobName, isPackage) {
           throw new Error(`There is a syntax error in the composer.lock file: ${e.message}.`);
         }
 
-        let filteredDependencies = results.dependencies;
         // Package PRs should update themselves (because they are included in
         // the composer.jsons of sites), but Site PRs shouldn't be included
         // (because they're never a composer dependency)
-        if (!isPackage) {
-          filteredDependencies = results.dependencies.filter(
-            dependency => !jobName.includes(dependency.fullName)
-          );
-        }
+        const filteredDependencies = (isPackage)
+          ? results.dependencies
+          : results.dependencies.filter(
+              dependency => !jobName.includes(dependency.fullName)
+            );
 
         if (!('repositories' in composerJson)) {
           composerJson.repositories = [];
