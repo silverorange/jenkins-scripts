@@ -96,11 +96,7 @@ function getNoTestsForUrl(url) {
 }
 
 function getRepoNameMatchesJobName(dependencyName, jobName) {
-  const matches = jobName.match(/.+?\/.+?(?=\/)/);
-  if (!matches) {
-    return false;
-  }
-  return matches[0] === dependencyName;
+  return jobName.includes(dependencyName);
 }
 
 module.exports = function modifyComposer(authToken, jobName, isPackage) {
