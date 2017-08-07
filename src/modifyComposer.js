@@ -90,16 +90,15 @@ function getDependenciesRecursive(url, authToken) {
     });
 }
 
-function getNoTestsForUrl(url) {
-  return fetchGitHubJson(url)
+function getNoTestsForUrl(url, authToken) {
+  return fetchGitHubJson(url, authToken)
     .then(json => Promise.resolve(getNoTests(json.body)));
 }
 
 module.exports = function modifyComposer(authToken, jobName, isPackage) {
   const jobUrl = `https://api.github.com/repos/${jobName}`;
-
   // Check if we should run CI tests for the job.
-  getNoTestsForUrl(jobUrl).then((noTests) => {
+  getNoTestsForUrl(jobUrl, authToken).then((noTests) => {
     if (noTests) {
       console.log(chalk.yellow('Detected no tests keyword'));
       process.exit(3);
