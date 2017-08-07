@@ -95,6 +95,14 @@ function getNoTestsForUrl(url) {
     .then(json => Promise.resolve(getNoTests(json.body)));
 }
 
+function getRepoNameMatchesJobName(dependencyName, jobName) {
+  const matches = jobName.match(/.+?\/.+?(?=\/)/);
+  if (!matches) {
+    return false;
+  }
+  return matches[0] === dependencyName;
+}
+
 module.exports = function modifyComposer(authToken, jobName, isPackage) {
   const jobUrl = `https://api.github.com/repos/${jobName}`;
 
@@ -130,19 +138,30 @@ module.exports = function modifyComposer(authToken, jobName, isPackage) {
           throw new Error(`There is a syntax error in the composer.lock file: ${e.message}.`);
         }
 
-        if (isPackage) {
-          if (!('repositories' in composerJson)) {
-            composerJson.repositories = [];
-          }
-
-          results.dependencies.forEach((dependency) => {
-            addRepository(composerJson, dependency.sshUrl);
-            addRequirement(composerJson, composerLock, dependency);
-          });
+        let filteredDependencies = results.dependencies;
+        // Package PRs should update themselves (because they are included in
+        // the composer.jsons of sites), but Site PRs shouldn't be included
+        // (because they're never a composer dependency)
+        if (!isPackage) {
+          filteredDependencies = results.dependencies.filter(
+            dependency => !getRepoNameMatchesJobName(
+              dependency.fullName,
+              jobName
+            )
+          );
         }
 
+        if (!('repositories' in composerJson)) {
+          composerJson.repositories = [];
+        }
+
+        filteredDependencies.forEach((dependency) => {
+          addRepository(composerJson, dependency.sshUrl);
+          addRequirement(composerJson, composerLock, dependency);
+        });
+
         return writeComposerAsPromise(composerJson, useTabs)
-          .then(() => results.dependencies);
+          .then(() => filteredDependencies);
       })
       .then((dependencies) => {
         console.log('Updated composer.json with the following dependencies:');
