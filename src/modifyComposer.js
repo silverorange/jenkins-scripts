@@ -26,10 +26,10 @@ function addRequirement(json, lock, dependency) {
   const modifiedJson = json;
 
   const thePackage = lock.packages.find(element => (element.name === dependency.fullName));
-  const previousVersion = (thePackage) ? thePackage.version : '';
+  const previousVersion = (thePackage) ? ` as ${thePackage.version}` : '';
 
   // TODO: check if it should be require or require-dev
-  modifiedJson.require[dependency.fullName] = `dev-master#${dependency.headSha} as ${previousVersion}`;
+  modifiedJson.require[dependency.fullName] = `dev-master#${dependency.headSha}${previousVersion}`;
 }
 
 function writeComposerAsPromise(json, useTabs) {
