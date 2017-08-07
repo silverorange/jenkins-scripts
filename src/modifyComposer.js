@@ -26,10 +26,10 @@ function addRequirement(json, lock, dependency) {
   const modifiedJson = json;
 
   const thePackage = lock.packages.find(element => (element.name === dependency.fullName));
-  const previousVersion = (thePackage) ? thePackage.version : '';
+  const previousVersion = (thePackage) ? ` as ${thePackage.version}` : '';
 
   // TODO: check if it should be require or require-dev
-  modifiedJson.require[dependency.fullName] = `dev-master#${dependency.headSha} as ${previousVersion}`;
+  modifiedJson.require[dependency.fullName] = `dev-master#${dependency.headSha}${previousVersion}`;
 }
 
 function writeComposerAsPromise(json, useTabs) {
@@ -127,22 +127,29 @@ module.exports = function modifyComposer(authToken, jobName, isPackage) {
         try {
           composerLock = JSON.parse(results.lockJson);
         } catch (e) {
-          throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
+          throw new Error(`There is a syntax error in the composer.lock file: ${e.message}.`);
         }
 
-        if (isPackage) {
-          if (!('repositories' in composerJson)) {
-            composerJson.repositories = [];
-          }
+        // Package PRs should update themselves (because they are included in
+        // the composer.jsons of sites), but Site PRs shouldn't be included
+        // (because they're never a composer dependency)
+        const filteredDependencies = (isPackage)
+          ? results.dependencies
+          : results.dependencies.filter(
+              dependency => !jobName.includes(dependency.fullName)
+            );
 
-          results.dependencies.forEach((dependency) => {
-            addRepository(composerJson, dependency.sshUrl);
-            addRequirement(composerJson, composerLock, dependency);
-          });
+        if (!('repositories' in composerJson)) {
+          composerJson.repositories = [];
         }
+
+        filteredDependencies.forEach((dependency) => {
+          addRepository(composerJson, dependency.sshUrl);
+          addRequirement(composerJson, composerLock, dependency);
+        });
 
         return writeComposerAsPromise(composerJson, useTabs)
-          .then(() => results.dependencies);
+          .then(() => filteredDependencies);
       })
       .then((dependencies) => {
         console.log('Updated composer.json with the following dependencies:');
