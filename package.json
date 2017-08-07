@@ -16,7 +16,7 @@
     "is-composer-package-required": "./bin/is-composer-package-required"
   },
   "scripts": {
-    "lint": "./node_modules/.bin/eslint ./src/*.js"
+    "lint": "eslint ./src/*.js"
   },
   "dependencies": {
     "bluebird": "^3.5.0",
