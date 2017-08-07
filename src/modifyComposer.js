@@ -127,7 +127,7 @@ module.exports = function modifyComposer(authToken, jobName, isPackage) {
         try {
           composerLock = JSON.parse(results.lockJson);
         } catch (e) {
-          throw new Error(`There is a syntax error in the composer.json file: ${e.message}.`);
+          throw new Error(`There is a syntax error in the composer.lock file: ${e.message}.`);
         }
 
         if (isPackage) {
