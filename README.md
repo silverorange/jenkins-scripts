@@ -5,4 +5,5 @@ This is run if the PR being built is a package. It ensures that the package is f
 ## modifyComposer.js
 This runs for both packages and sites. It modifies the composer.json file to include any dependencies that are specified in the body of the PR. It also checks to see if tests should be cancelled due to the no tests flag.
 
-For more details, see the wiki on our [Continuous Integration Page](https://wiki.silverorange.com/Developers/Continuous%20Integration)
+
+For more details on both of these scripts, and the Jenkins process, see the [Continuous Integration Page](https://wiki.silverorange.com/Developers/Continuous%20Integration) on the wiki
