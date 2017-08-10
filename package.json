@@ -7,10 +7,7 @@
     "Ross Evans <therealrossevans@gmail.com>",
     "Michael Gauthier <mike@silverorange.com>"
   ],
-  "license": {
-    "type": "MIT",
-    "url": "http://opensource.org/licenses/MIT"
-  },
+  "license": "MIT",
   "bin": {
     "modify-composer": "./bin/modify-composer",
     "is-composer-package-required": "./bin/is-composer-package-required"
