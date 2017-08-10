@@ -151,7 +151,7 @@ module.exports = function modifyComposer(authToken, jobName, isPackage) {
           .then(() => filteredDependencies);
       })
       .then((dependencies) => {
-        if (dependencies.length == 0) {
+        if (dependencies.length === 0) {
           console.log('No dependencies detected.');
         } else {
           console.log('Updated composer.json with the following dependencies:');
