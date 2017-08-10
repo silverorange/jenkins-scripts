@@ -9,7 +9,7 @@ module.exports = function isRequired(repoName) {
       try {
         const composerLock = JSON.parse(contents);
         const isRequiredPackage = composerLock.packages
-          .some(thePackage => (thePackage.name === `silverorange/${repoName}`));
+          .some(thePackage => (thePackage.name === repoName));
 
         console.log(isRequiredPackage);
       } catch (e) {
