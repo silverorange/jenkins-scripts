@@ -151,10 +151,14 @@ module.exports = function modifyComposer(authToken, jobName, isPackage) {
           .then(() => filteredDependencies);
       })
       .then((dependencies) => {
-        console.log('Updated composer.json with the following dependencies:');
-        dependencies.forEach((dependency) => {
-          console.log(` - ${dependency.fullName}`);
-        });
+        if (dependencies.length == 0) {
+          console.log('No dependencies detected.');
+        } else {
+          console.log('Updated composer.json with the following dependencies:');
+          dependencies.forEach((dependency) => {
+            console.log(` - ${dependency.fullName}`);
+          });
+        }
       })
       .catch((err) => {
         console.error(chalk.red(`Error: ${err}`));
