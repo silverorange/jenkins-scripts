@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+
+const modifyHomepage = require('./modify-homepage.js');
+
+const newHomepageURL = process.argv[2];
+
+modifyHomepage(newHomepageURL);
