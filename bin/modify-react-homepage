@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const modifyHomepage = require('./modify-homepage.js');
+const modifyHomepage = require('../src/modifyReactHomepage.js');
 
 const newHomepageURL = process.argv[2];
 
