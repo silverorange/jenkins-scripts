@@ -10,7 +10,8 @@
   "license": "MIT",
   "bin": {
     "modify-composer": "./bin/modify-composer",
-    "is-composer-package-required": "./bin/is-composer-package-required"
+    "is-composer-package-required": "./bin/is-composer-package-required",
+    "modify-react-homepage": "./bin/modify-react-homepage"
   },
   "scripts": {
     "lint": "eslint ./src/*.js"
