@@ -10,7 +10,7 @@ module.exports = function modifyHomepage(homepageURL) {
         const packageJson = JSON.parse(contents);
         packageJson.homepage = homepageURL;
         const newPackage = `${JSON.stringify(packageJson, null, 2)}\n`;
-        fs.writeFile('package.json', newPackage);
+        fs.writeFileSync('package.json', newPackage);
       } catch (e) {
         throw new Error('Error while modifying package.json');
       }
