@@ -1,6 +1,12 @@
 module.exports = function getDependencies(body) {
+  // Match key phrases:
+  // - requires X
+  // - depends on X
+  // - depends upon X
+  // followed by arbitrary content until the next period, the next double
+  // newline or the end of the string.
   const requiredLines = body.match(
-    /\b(?:requires\s+|depends\s+(?:up)?on\s+).*/gi
+    /\b(requires\s+|depends\s+(up)?on\s+)(.|\n)+?(\.(\s|$)|\n\n|$)/gi
   );
 
   if (!requiredLines) {
