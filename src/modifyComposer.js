@@ -1,17 +1,15 @@
 const fs = require('fs');
 const Promise = require('bluebird');
 const chalk = require('chalk');
-const fetch = require('isomorphic-fetch');
 const getDependencies = require('./text/getDependencies');
 const getNoTests = require('./text/getNoTests');
 const addRepository = require('./composer/addRepository');
 const addRequirement = require('./composer/addRequirement');
 const getRepoDetails = require('./github/getRepoDetails');
+const fetchGitHubJson = require('./github/fetchGitHubJson');
 
 const readFileAsPromise = Promise.promisify(fs.readFile);
 const writeFileAsPromise = Promise.promisify(fs.writeFile);
-
-const USER_AGENT = 'silverorange CI process';
 
 function writeComposerAsPromise(json, useTabs) {
   // Stringify JSON with pretty-printing and trailing newline.
@@ -25,15 +23,6 @@ function writeComposerAsPromise(json, useTabs) {
     : newContents;
 
   return writeFileAsPromise('composer.json', formattedContents);
-}
-
-function fetchGitHubJson(url, authToken) {
-  return fetch(url, {
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-      'User-Agent': USER_AGENT
-    }
-  }).then(response => response.json());
 }
 
 // Store visited links to prevent infinite loop.

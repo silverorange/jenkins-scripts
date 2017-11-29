@@ -1,4 +1,3 @@
-/* eslint-env jest */
 /* eslint-disable no-underscore-dangle */
 
 const fs = jest.genMockFromModule('fs');
