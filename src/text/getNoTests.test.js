@@ -1,5 +1,3 @@
-/* eslint-env jest */
-
 const getNoTests = require('./getNoTests');
 
 describe('no tests', () => {
@@ -46,17 +44,17 @@ describe('emoji', () => {
   });
 });
 
-describe('don\'t run tests', () => {
-  test('don\'t run tests', () => {
-    expect(getNoTests('don\'t run tests')).toBe(true);
+describe("don't run tests", () => {
+  test("don't run tests", () => {
+    expect(getNoTests("don't run tests")).toBe(true);
   });
 
-  test('don\'t run tests in sentence', () => {
-    expect(getNoTests('pease don\'t run tests for this PR')).toBe(true);
+  test("don't run tests in sentence", () => {
+    expect(getNoTests("pease don't run tests for this PR")).toBe(true);
   });
 
-  test('uppercase don\'t run tests', () => {
-    expect(getNoTests('Don\'t run tests.')).toBe(true);
+  test("uppercase don't run tests", () => {
+    expect(getNoTests("Don't run tests.")).toBe(true);
   });
 });
 

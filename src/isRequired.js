@@ -7,10 +7,9 @@ module.exports = function isRequired(repoName, cb) {
     } else {
       try {
         const composerLock = JSON.parse(contents);
-        const isRequiredPackage = composerLock.packages
-          .some(thePackage => (thePackage.name === repoName));
-
-        console.log(isRequiredPackage);
+        const isRequiredPackage = composerLock.packages.some(
+          thePackage => thePackage.name === repoName
+        );
         cb(null, isRequiredPackage);
       } catch (e) {
         cb(`There was a syntax error in the composer.lock file ${e.message}`);

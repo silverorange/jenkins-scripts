@@ -1,4 +1,3 @@
-/* eslint-env jest */
 /* eslint-disable global-require */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-unused-vars */
@@ -10,7 +9,10 @@ beforeEach(() => {
 });
 
 test('is required', () => {
-  require('fs').__setMockFile('composer.lock', '{"packages":[{"name":"silverorange/swat"},{"name":"silverorange/store"}]}');
+  require('fs').__setMockFile(
+    'composer.lock',
+    '{"packages":[{"name":"silverorange/swat"},{"name":"silverorange/store"}]}'
+  );
   const isRequired = require('./isRequired');
   isRequired('silverorange/swat', (err, result) => {
     expect(err).toBe(null);
@@ -19,16 +21,24 @@ test('is required', () => {
 });
 
 test('invalid JSON', () => {
-  require('fs').__setMockFile('composer.lock', '"packages":[{"name":"silverorange/swat"},{"name":"silverorange/store"}]}');
+  require('fs').__setMockFile(
+    'composer.lock',
+    '"packages":[{"name":"silverorange/swat"},{"name":"silverorange/store"}]}'
+  );
   const isRequired = require('./isRequired');
   isRequired('silverorange/swat', (err, result) => {
     expect(result).toBe(undefined);
-    expect(err).toBe('There was a syntax error in the composer.lock file Unexpected token : in JSON at position 10');
+    expect(err).toBe(
+      'There was a syntax error in the composer.lock file Unexpected token : in JSON at position 10'
+    );
   });
 });
 
 test('missing or unreadable composer.lock', () => {
-  require('fs').__setMockFile('composer.json', '{"packages":[{"name":"silverorange/swat"},{"name":"silverorange/store"}]}');
+  require('fs').__setMockFile(
+    'composer.json',
+    '{"packages":[{"name":"silverorange/swat"},{"name":"silverorange/store"}]}'
+  );
   const isRequired = require('./isRequired');
   isRequired('silverorange/swat', (err, result) => {
     expect(result).toBe(undefined);

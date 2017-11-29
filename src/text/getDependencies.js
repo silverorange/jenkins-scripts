@@ -14,15 +14,21 @@ module.exports = function getDependencies(body) {
   }
 
   return requiredLines.reduce((links, line) => {
-    const gitHubLinks = line.match(/https?:\/\/github.com\/([A-Za-z0-9_-]+)\/[A-Za-z0-9_-]+\/pull\/\d*/g);
+    const gitHubLinks = line.match(
+      /https?:\/\/github.com\/([A-Za-z0-9_-]+)\/[A-Za-z0-9_-]+\/pull\/\d*/g
+    );
 
     if (!gitHubLinks) {
       return links;
     }
 
-    const apiLinks = gitHubLinks.map((gitHubLink) => {
-      const matches = gitHubLink.match(/https?:\/\/github.com\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)\/pull\/(\d*)/);
-      return `https://api.github.com/repos/${matches[1]}/${matches[2]}/pulls/${matches[3]}`;
+    const apiLinks = gitHubLinks.map(gitHubLink => {
+      const matches = gitHubLink.match(
+        /https?:\/\/github.com\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)\/pull\/(\d*)/
+      );
+      return `https://api.github.com/repos/${matches[1]}/${matches[2]}/pulls/${
+        matches[3]
+      }`;
     });
 
     return links.concat(apiLinks);
