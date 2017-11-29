@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+
+const jest = require('jest'); // eslint-disable-line import/no-extraneous-dependencies
+
+const argv = process.argv.slice(2);
+
+process.env.NODE_ENV = 'test';
+
+// Watch unless on CI or in coverage mode
+if (!process.env.CI && argv.indexOf('--coverage') < 0) {
+  argv.push('--watch');
+}
+
+jest.run(argv);

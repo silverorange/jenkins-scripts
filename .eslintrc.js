@@ -1,21 +1,13 @@
 module.exports = {
-  extends: 'airbnb',
+  extends: ['airbnb', 'prettier', 'prettier/react'],
+  plugins: ['prettier'],
   env: {
-    browser: false,
     node: true,
-    es6: true,
+    jest: true,
   },
   rules: {
     'no-console': 'off',
-    'comma-dangle': [
-      'error',
-      {
-        arrays: 'always-multiline',
-        objects: 'always-multiline',
-        imports: 'never',
-        exports: 'never',
-        functions: 'never',
-      },
-    ],
+    'react/jsx-filename-extension': [1, { extensions: ['.js'] }],
+    'prettier/prettier': ['error', { singleQuote: true }],
   },
 };

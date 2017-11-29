@@ -10,6 +10,6 @@ if (process.argv.length < 5) {
 
 const authToken = process.argv[2];
 const jobName = process.argv[3];
-const isPackage = (process.argv[4] === 'package');
+const isPackage = process.argv[4] === 'package';
 
 modifyComposer(authToken, jobName, isPackage);
