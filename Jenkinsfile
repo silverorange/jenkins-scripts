@@ -19,7 +19,9 @@ pipeline {
     stage('Unit Tests') {
       steps {
         echo 'Running unit tests...'
-        sh 'yarn test'
+        withEnv(['CI=true']) {
+          sh 'yarn test'
+        }
       }
     }
   }
