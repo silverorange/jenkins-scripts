@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+
+/*
+ * Takes arguments:
+ * 1 - Display name of User (CHANGE_AUTHOR_DISPLAY_NAME in Jenkins)
+ * 2 - Username of User (CHANGE_AUTHOR in Jenkins)
+ * 3 - Link to Failed Build (RUN_DISPLAY_URL in Jenkins)
+ * 4 - Name of PR (CHANGE_TITLE in Jenkins)
+ * 5 - Name of Job in form Organization/Repo/PR-123 (JOB_NAME in Jenkins)
+ */
+
+const notifySlackUser = require('../src/notifySlackUsers');
+
+const user = {
+  displayName: process.argv[2],
+  userName: process.argv[3],
+}
+
+const buildInformation = {
+  ciLink: process.argv[4],
+  prName: process.argv[5],
+  repoName: process.argv[6],
+}
+
+notifySlackUser(user, buildInformation, (err, result) => {
+  if (err) {
+    console.log(err);
+    process.exit(1);
+  } else {
+    console.log(result);
+  }
+});
