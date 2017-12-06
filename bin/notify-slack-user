@@ -7,6 +7,7 @@
  * 3 - Link to Failed Build (RUN_DISPLAY_URL in Jenkins)
  * 4 - Name of PR (CHANGE_TITLE in Jenkins)
  * 5 - Name of Job in form Organization/Repo/PR-123 (JOB_NAME in Jenkins)
+ * 6 - Stage the build failed in (STAGE_NAME in Jenkins)
  */
 
 const notifySlackUser = require('../src/notifySlackUsers');
@@ -19,7 +20,9 @@ const user = {
 const buildInformation = {
   ciLink: process.argv[4],
   prName: process.argv[5],
-  repoName: process.argv[6],
+  // Removes the PR-123 part from the end of the string
+  repoName: process.argv[6].split('/').slice(0, 2).join('/'),
+  stageName: process.argv[7],
 }
 
 notifySlackUser(user, buildInformation, (err, result) => {
