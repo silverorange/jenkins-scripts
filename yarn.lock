@@ -2728,6 +2728,12 @@ signal-exit@^3.0.0, signal-exit@^3.0.2:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.2.tgz#b5fdc08f1287ea1178628e415e25132b73646c6d"
 
+slack@^9.1.0:
+  version "9.1.1"
+  resolved "https://registry.yarnpkg.com/slack/-/slack-9.1.1.tgz#fbec926554debe68c5417b25cdcdb2e0584df287"
+  dependencies:
+    tiny-json-http "^5.2.0"
+
 slash@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/slash/-/slash-1.0.0.tgz#c41f2f6c39fc16d1cd17ad4b5d896114ae470d55"
@@ -2933,6 +2939,10 @@ throat@^4.0.0:
 through@^2.3.6:
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/through/-/through-2.3.8.tgz#0dd4c9ffaabc357960b1b724115d7e0e86a2e1f5"
+
+tiny-json-http@^5.2.0:
+  version "5.3.1"
+  resolved "https://registry.yarnpkg.com/tiny-json-http/-/tiny-json-http-5.3.1.tgz#8321e63bff8b9b291b1074a86097e766a0b0f6ba"
 
 tmp@^0.0.33:
   version "0.0.33"
