@@ -1,9 +1,6 @@
-/* eslint-disable global-require */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable no-unused-vars */
+const notifySlackUser = require('./notifySlackUsers.js');
 
 test('cannot find user', () => {
-  const notifySlackUser = require('./notifySlackUsers.js');
   notifySlackUser(
     {
       displayName: 'not a real user',
@@ -18,7 +15,6 @@ test('cannot find user', () => {
 });
 
 test('successful response', () => {
-  const notifySlackUser = require('./notifySlackUsers.js');
   notifySlackUser(
     {
       displayName: 'slackbot',

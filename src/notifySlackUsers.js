@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-
 const Slack = require('slack');
 const Promise = require('bluebird');
 
@@ -27,7 +25,7 @@ function contactUser(user, buildInformation, callback) {
           buildInformation.ciLink
         }|View in Jenkins>`
       })
-      .then(data => callback(null, 'Success!'))
+      .then(() => callback(null, 'Success!'))
       .catch(err => callback(err));
   });
 }
