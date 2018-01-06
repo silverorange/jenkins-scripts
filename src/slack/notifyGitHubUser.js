@@ -1,5 +1,5 @@
-const getActiveUser = require('./slack/getActiveUser');
-const contactUser = require('./slack/contactUser');
+const getActiveUser = require('./getActiveUser');
+const contactUser = require('./contactUser');
 
 module.exports = function notifySlackUser(
   gitHubUser,

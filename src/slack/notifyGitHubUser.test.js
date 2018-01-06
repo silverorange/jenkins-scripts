@@ -1,4 +1,4 @@
-const notifySlackUser = require('./notifySlackUsers.js');
+const notifySlackUser = require('./notifyGitHubUser.js');
 
 test('cannot find user', () => {
   notifySlackUser(
