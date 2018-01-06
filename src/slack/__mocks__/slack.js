@@ -6,9 +6,19 @@ function Slack() {}
 
 Slack.prototype.users = {
   list: function list() {
-    return new Promise(resolve => {
-      resolve(nextResponseEntity);
-    });
+    return Promise.resolve(nextResponseEntity);
+  }
+};
+
+Slack.prototype.im = {
+  open: function open() {
+    return Promise.resolve(nextResponseEntity);
+  }
+};
+
+Slack.prototype.chat = {
+  postMessage: function open() {
+    return Promise.resolve(nextResponseEntity);
   }
 };
 

@@ -28,6 +28,7 @@ test('ignores deleted users', () => {
   process.env.SLACK_BOT_TOKEN = 'xoxa-xxxxxxxxx-xxxx';
   const getActiveOrganizationUsers = require('./getActiveOrganizationUsers');
 
+  expect.assertions(1);
   getActiveOrganizationUsers().then(users => {
     expect(users).toEqual([
       {
