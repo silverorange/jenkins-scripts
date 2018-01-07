@@ -4,7 +4,7 @@ const modifyComposer = require('../src/modifyComposer');
 const showHelp = require('../src/showHelp');
 
 if (process.argv.length < 5) {
-  showHelp();
+  showHelp('modify-composer');
   process.exit(1);
 }
 
