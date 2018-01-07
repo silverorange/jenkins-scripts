@@ -4,7 +4,9 @@
 jest.mock('slack');
 
 test('ignores deleted users', () => {
-  require('slack').__setNextResponse({
+  const mockSlack = require('slack');
+  mockSlack.__clearResponses();
+  mockSlack.__setNextResponse({
     members: [
       {
         id: 'W07QCRPA4',

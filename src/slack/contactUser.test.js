@@ -4,7 +4,9 @@
 jest.mock('slack');
 
 test('fails on bad response', () => {
-  require('slack').__setNextResponse({
+  const mockSlack = require('slack');
+  mockSlack.__clearResponses();
+  mockSlack.__setNextResponse({
     ok: false,
     channel: {
       id: '#test'
@@ -40,12 +42,19 @@ test('fails on bad response', () => {
 });
 
 test('succeeds', () => {
-  require('slack').__setNextResponse({
+  const mockSlack = require('slack');
+  mockSlack.__clearResponses();
+
+  // im channel open response
+  mockSlack.__setNextResponse({
     ok: true,
     channel: {
       id: '#test'
     }
   });
+
+  // chat postMessage response
+  mockSlack.__setNextResponse({});
 
   process.env.SLACK_BOT_TOKEN = 'xoxa-xxxxxxxxx-xxxx';
   const contactUser = require('./contactUser');

@@ -4,7 +4,9 @@
 jest.mock('slack');
 
 test('matches userName', () => {
-  require('slack').__setNextResponse({
+  const mockSlack = require('slack');
+  mockSlack.__clearResponses();
+  mockSlack.__setNextResponse({
     members: [
       {
         id: 'W07QCRPA4',
@@ -45,7 +47,9 @@ test('matches userName', () => {
 });
 
 test('matches displayName', () => {
-  require('slack').__setNextResponse({
+  const mockSlack = require('slack');
+  mockSlack.__clearResponses();
+  mockSlack.__setNextResponse({
     members: [
       {
         id: 'W07QCRPA4',
@@ -86,7 +90,9 @@ test('matches displayName', () => {
 });
 
 test('rejects on no match', () => {
-  require('slack').__setNextResponse({
+  const mockSlack = require('slack');
+  mockSlack.__clearResponses();
+  mockSlack.__setNextResponse({
     members: [
       {
         id: 'W07QCRPA4',
