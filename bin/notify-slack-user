@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const notifySlackUser = require('../src/notifySlackUsers');
+const notifyGitHubUser = require('../src/slack/notifyGitHubUser');
 const showHelp = require('../src/showHelp');
 
 if (process.argv.length < 8) {
@@ -10,20 +10,23 @@ if (process.argv.length < 8) {
 
 const user = {
   displayName: process.argv[2],
-  userName: process.argv[3],
-}
+  userName: process.argv[3]
+};
 
 const buildInformation = {
   ciLink: process.argv[4],
   prName: process.argv[5],
   // Removes the PR-123 part from the end of the string
-  repoName: process.argv[6].split('/').slice(0, 2).join('/'),
-  stageName: process.argv[7],
-}
+  repoName: process.argv[6]
+    .split('/')
+    .slice(0, 2)
+    .join('/'),
+  stageName: process.argv[7]
+};
 
-notifySlackUser(user, buildInformation, (err, result) => {
+notifyGitHubUser(user, buildInformation, (err, result) => {
   if (err) {
-    console.log(err);
+    console.error(err);
     process.exit(1);
   } else {
     console.log(result);
