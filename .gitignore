@@ -57,3 +57,5 @@ typings/
 # dotenv environment variables file
 .env
 
+# JUnit test logs
+junit.xml
